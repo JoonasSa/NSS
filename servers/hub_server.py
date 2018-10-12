@@ -8,7 +8,7 @@ config.read('conf.ini')
 
 token_length = int(config['DEFAULT']['TOKEN_LENGTH'])
 port = int(config['PORTS']['HUB'])
-host = socket.gethostname()
+host = 'localhost'
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

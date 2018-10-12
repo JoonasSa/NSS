@@ -12,11 +12,12 @@ config.read('conf.ini')
 
 token_length = int(config['DEFAULT']['TOKEN_LENGTH'])
 port = int(config['PORTS']['LOGIN'])
-host = socket.gethostname()
+host = 'localhost'
 
 mocks = [
     {'username': 'username', 'password': 'password'},
-    {'username': 'joonas', 'password': 'sarapalo'}
+    {'username': 'joonas', 'password': 'sarapalo'},
+    {'username': 'a', 'password': 'a'}
 ]
 
 # TODO: make this do something
@@ -47,13 +48,13 @@ def main():
 def receive_msg(connection):
     length = 0
     status, decoded_length = receive_tcp(connection, 6)
-    if status and decoded_length[0:3] == "len":
+    if status and decoded_length[:3] == "len":
         length = int(decoded_length[3:])
     else:
         return False, ""
 
     status, credentials = receive_tcp(connection, length)
-    if status and credentials[0:3] == "log":
+    if status and credentials[:3] == "log":
         return True, credentials[3:].split(" ")
     return False, ""
 
@@ -82,30 +83,3 @@ def generate_token():
 
 if __name__ == "__main__":
     main()
-
-'''
-def receive_msg(connection):
-    # receive message length (triple redundancy)
-    success = False
-    length = 0
-    print("1")
-    for _ in range(3):
-        status, decoded_length = receive_tcp(connection, 6)
-        print('length', decoded_length)
-        if status and decoded_length[0:3] == "len":
-            length = int(decoded_length[3:])
-            success = True
-            while True:
-                
-            break
-    if success == False:
-        return False, ""
-
-    print("2")
-    # receive message length bytes containing username and password (triple redundancy)
-    for _ in range(3):
-        status, credentials = receive_tcp(connection, length)
-        print("cred", credentials)
-        if status and credentials[0:3] == "log":
-            return True, credentials[3:].split(" ")
-    return False, ""'''

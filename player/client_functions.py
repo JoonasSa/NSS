@@ -13,8 +13,8 @@ def receive_tcp(connection, size, timeout=2.0, encoding='ascii'):
         return False, ""
 
 def send_tcp(connection, msg, timeout=2.0, encoding='ascii'):
-    if random() < 0.25:
-        return False, ""
+    # if random() < 0.25:
+    #    return False, ""
     try:
         connection.settimeout(timeout)
         encoded_msg = msg.encode('ascii')

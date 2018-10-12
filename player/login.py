@@ -9,7 +9,7 @@ config.read('conf.ini')
 
 token_length = int(config['DEFAULT']['TOKEN_LENGTH'])
 port = int(config['PORTS']['LOGIN'])
-host = socket.gethostname()
+host = 'localhost'
 
 def login():
     print("Login to server")
