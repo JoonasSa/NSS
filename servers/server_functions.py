@@ -1,7 +1,8 @@
 # Author: Joonas Sarapalo, 014585951
 
 import socket
-import sys
+from sys import getsizeof
+from functools import reduce
 
 def receive_tcp(connection, size, timeout=2.0, encoding='ascii'):
     try:
@@ -21,21 +22,23 @@ def send_tcp(connection, msg, timeout=2.0, encoding='ascii'):
     except:
         return False
 
-def message_to_chunks(msg, n):
-    magic = n // 2 # magic number to get exactly 100 bytes
+# TODO: works?
+def message_to_chunks(data, n):
+    b_data = bytearray(data, 'ascii')
     chunks = []
-    for i in range(0, len(msg), magic):
-        chunk = msg[i : i + magic]
-        if sys.getsizeof(chunk) < n:
-            padding = n - sys.getsizeof(chunk)
+    i = 0 
+    while i < len(b_data):
+        chunk = b_data[i : i + n].decode('ascii')
+        print("shiit", getsizeof(chunk))
+        if getsizeof(chunk) < n:
+            padding = n - getsizeof(chunk)
             chunk = chunk + padding * '0'
         chunks.append(chunk)
+        i += n
     return chunks
 
+def zero_padding(data, n, front=True):
+    return (n - len(data)) * "0" + data if front else data + (n - len(data)) * "0"
+
 def checksum(data):
-    i=0
-    checksum = 0
-    while i < len(data):
-        checksum = checksum ^ ord(data[i])
-        i+=1
-    return hex(checksum)
+    return sum(bytearray(data, 'ascii'), 0) % 255

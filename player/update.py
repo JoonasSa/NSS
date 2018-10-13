@@ -2,7 +2,8 @@
 
 import socket
 import configparser
-from client_functions import receive_tcp, send_tcp
+from client_functions import receive_tcp, send_tcp, checksum
+from time import sleep
 
 config = configparser.ConfigParser()
 config.read('conf.ini')
@@ -26,7 +27,7 @@ def update():
     return up_to_date
 
 def download_update(connection):
-    print("Downloading updates...", connection)
+    print("Downloading updates...")
 
     # request update size
     status = send_tcp(connection, "1", 5.0)
@@ -35,11 +36,15 @@ def download_update(connection):
         return False
 
     # receive update size
+    sleep(0.5)
     status, size = receive_tcp(connection, 9, 5.0)
+    print(repr(size))
     if status == False or size[:3] != "len":
-        print("Didn't receive update size", size)
+        print("Didn't receive update size")
         return False
+
     size = int(size[3:])
+    print(size)
 
     # request updates
     status = send_tcp(connection, "2", 10.0)
@@ -51,25 +56,40 @@ def download_update(connection):
     print(dl_sum, " updates downloaded")
     return True
 
+# TODO: fix receiving multiple packets & implement requesting for specific chunks
 def handle_downloading(connection, size):
-    buffer = []
-    missed = []
+    print("handle_downloading")
+    buffer, missed = [], []
     while True:
         buffer, missed = download_chunks(connection, size, buffer)
-        #if len(missed) == 0:
-        #    break
+        if len(missed) == 0:
+            break
     # sort buffer...
     return len(buffer)
 
 def download_chunks(connection, size, buffer):
-    bytes_downloaded = 0
-    missed = []
-    seq = 0
+    print('download_chunks')
+    bytes_downloaded, seq, missed_seqs = 0, 0, []
     while bytes_downloaded < size:
-        status, data = receive_tcp(connection, 1024, 30.0)
-        if status == False:
-            missed.append(seq)
+        chunk_seq, msg, check = receive_and_parse_chunks(connection)
+        print(chunk_seq, check)
+        if chunk_seq == -1 or chunk_seq != seq or checksum(msg) != check:
+            print('missed')
+            missed_seqs.append(seq)
         else:
-            buffer.append(data)
+            buffer.append(msg.replace('0',''))
+        bytes_downloaded += 1024
         seq += 1
-    return buffer, missed
+
+    return buffer, missed_seqs
+
+def receive_and_parse_chunks(connection):
+    try:
+        connection.settimeout(5.0)
+        chunk = connection.recv(1024)
+        seq = int(chunk[:6].decode('ascii'))
+        msg = chunk[6:1021].decode('ascii')
+        check = int(chunk[1021:].decode('ascii'))
+        return seq, msg, check
+    except:
+        return -1, "", 0 # seq = -1 -> fail

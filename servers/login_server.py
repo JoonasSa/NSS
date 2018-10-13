@@ -24,6 +24,7 @@ mocks = [
 # active_tokens = set()
 
 def main():
+    print('Login server started...')
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((host, port))
     server.listen(5)
@@ -38,11 +39,12 @@ def main():
             if status == True:
                 print("login:", credentials)
                 session_token = handle_msg(credentials)
+                print('session_token', session_token)
                 send_tcp(connection, session_token)
                 break
         if status == False:
             send_tcp(connection, "0'No credentials received'0000000")
-        print("connection closed...")
+        print("connection closed...\n")
         connection.close()
 
 def receive_msg(connection):
