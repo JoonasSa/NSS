@@ -22,23 +22,8 @@ def send_tcp(connection, msg, timeout=2.0, encoding='ascii'):
     except:
         return False
 
-# TODO: works?
-def message_to_chunks(data, n):
-    b_data = bytearray(data, 'ascii')
-    chunks = []
-    i = 0 
-    while i < len(b_data):
-        chunk = b_data[i : i + n].decode('ascii')
-        print("shiit", getsizeof(chunk))
-        if getsizeof(chunk) < n:
-            padding = n - getsizeof(chunk)
-            chunk = chunk + padding * '0'
-        chunks.append(chunk)
-        i += n
-    return chunks
-
 def zero_padding(data, n, front=True):
     return (n - len(data)) * "0" + data if front else data + (n - len(data)) * "0"
 
 def checksum(data):
-    return sum(bytearray(data, 'ascii'), 0) % 255
+    return sum(data, 0) % 255

@@ -3,7 +3,8 @@
 import socketserver
 import configparser
 from time import time, sleep
-from server_functions import message_to_chunks, checksum, zero_padding
+from server_functions import checksum, zero_padding
+from sys import getsizeof
 
 config = configparser.ConfigParser()
 config.read('conf.ini')
@@ -12,11 +13,24 @@ token_length = int(config['DEFAULT']['TOKEN_LENGTH'])
 port = int(config['PORTS']['UPDATE'])
 host = 'localhost'
 
-with open("mini_update_data.txt") as text_file:
+def message_to_1020_byte_chunks(data):
+    magic = 952 # magic number to get 1015 bytes from string
+    b_data = bytearray(data, 'ascii')
+    chunks = []
+    i = 0 
+    while i < len(b_data):
+        chunk = b_data[i : i + magic]
+        if getsizeof(chunk) < 1020:
+            padding = 1020 - getsizeof(chunk)
+            chunk = chunk + bytes(padding * '0', 'ascii')
+        chunks.append(chunk)
+        i += magic
+    return chunks
+
+with open("update_data.txt") as text_file:
     update_data = text_file.read()
-data_chunks = message_to_chunks(update_data, 1015) # 1024 - 6 (seq) - 3 (checksum)
+data_chunks = message_to_1020_byte_chunks(update_data)
 update_size = "len" + zero_padding(str(len(data_chunks)), 5)
-print(repr(update_size), len(update_size))
 
 class UpdateServer(socketserver.BaseRequestHandler):
 	def handle(self):
@@ -24,20 +38,13 @@ class UpdateServer(socketserver.BaseRequestHandler):
 		self.timer = time()
 		while True:
 			self.request.settimeout(2.0)
-			self.request_type = self.request.recv(1).decode('ascii')
-
-			# reset timeout timer if something was received
-			if (len(self.request_type) > 0):
-				self.timer = time()
-
-			# check timeout timer if nothing was received
-			else:
-				if time() - self.timer > 5.0:
-					print('timeout...')
-					break
-				sleep(0.5)
-
-			self.handle_request()
+			try:
+				self.request_type = self.request.recv(1).decode('ascii')
+				self.handle_request()
+			except:
+				print('timeout...')
+				self.request.close()				
+				break
 		print("connection closed...")
 
 	def handle_request(self):
@@ -56,11 +63,6 @@ class UpdateServer(socketserver.BaseRequestHandler):
 		elif (self.request_type == '2'):
 			self.send_updates()
 
-		# specific chunk of the update
-		elif (self.request_type == '3'):
-			# needs to receive the chunk number
-			print('Client is requesting a specific part of the update')
-
 		else:
 			print('Unknown request type')
 
@@ -71,11 +73,11 @@ class UpdateServer(socketserver.BaseRequestHandler):
 	def send_updates(self):
 		for i in range(len(data_chunks)):
 			chunk = data_chunks[i] # data
-			check = zero_padding(str(checksum(chunk)), 3) # checksum
-			seq = zero_padding(str(i), 6) # seq
-			chunk = seq + chunk + check
-			print(chunk)
-			self.request.sendall(bytes(chunk, 'ascii'))
+			check = zero_padding(str(checksum(chunk)), 3) # checksum + padding
+			chunk = chunk + bytes(check + '}', 'ascii') # '}' is end of chunk character 
+			self.request.send(chunk)
+
+		print('sent', len(data_chunks), 'chunks')
 
 if __name__ == "__main__":
 	print("Update server started...\n")
