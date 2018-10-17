@@ -1,13 +1,10 @@
 # Author: Joonas Sarapalo, 014585951
 
-import socket
 from login import login
-from time import sleep
 from update import update
 from game import play
 
 def main():
-    # udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     print("                              ")
     print("******************************")
@@ -22,8 +19,8 @@ def main():
     update()
     print("client updated!")
 
-    play()
-    exit(0)
+    end_result = play(session_token)
+    print(end_result)
 
 if __name__ == "__main__":
     main()

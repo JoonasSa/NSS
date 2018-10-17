@@ -5,7 +5,7 @@ import secrets
 import string
 # from time import time
 import configparser
-from server_functions import receive_tcp, send_tcp
+from server_functions import receive_tcp, send_tcp, generate_secret
 
 config = configparser.ConfigParser()
 config.read('conf.ini')
@@ -62,7 +62,7 @@ def receive_msg(connection):
 
 def handle_msg(decoded_msg):
     if validate_username_password(decoded_msg):
-        session_token = generate_token()
+        session_token = generate_secret(token_length)
         # TODO: make this do something
         # active_tokens.add({session_token, time()}) # token and current time
         return "1" + session_token # correct username & password
@@ -79,9 +79,6 @@ def validate_username_password(decoded_msg):
         print("username", username, "password", password, "not in mocks")
         return False
     return True
-
-def generate_token():
-    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(token_length)) 
 
 if __name__ == "__main__":
     main()
