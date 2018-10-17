@@ -24,7 +24,6 @@ def update():
     if updates:
         up_to_date = download_update(tcp_client)
 
-    print("close...")
     tcp_client.close()
     return up_to_date
 
@@ -53,13 +52,17 @@ def download_update(connection):
     
     dl_sum = handle_downloading(connection, size)
 
-    print(dl_sum, "chunks received")
+    if dl_sum == size:
+        print("All chunks received")
+    else:
+        print(dl_sum, "chunks received")
     return True
 
 def handle_downloading(connection, size):
-    print("handle_downloading")
     downloaded_chunks, missed_seqs = [], []
     received = download_chunks(connection, size)
+
+    print('Validating chunks...')
     chunks = split_chunks(received)
     for seq in range(len(chunks)):
         msg, check = parse_chunk(chunks[seq])
@@ -70,7 +73,6 @@ def handle_downloading(connection, size):
     return len(downloaded_chunks)
 
 def download_chunks(connection, size):
-    print('download_chunks')
     received, seq = [], 0
     while seq < size:
         status, chunk = receive_tcp(connection, 1024)
@@ -78,6 +80,8 @@ def download_chunks(connection, size):
             received.append(chunk)
         else:
             print('connection problems...')
+        if seq % 500 == 0:
+            print(str(seq) + " chunks downloaded...")
         seq += 1
     return received
 

@@ -17,28 +17,14 @@ class TCPGameServer(socketserver.BaseRequestHandler):
 		raw = self.request.recv(token_length).decode('ascii')
 		option, session_token = raw[0], raw[1:]
 		print(option, session_token, option == '1', len(session_token))
+
         # join match
-		if option == '1':
-			if len(session_token) == 31:
-				self.request.send(bytes('1' + generate_secret(token_length), 'ascii'))
-			else:
-				print('Bad session token')
-				self.request.send(bytes('0' * 32, 'ascii'))
-		# leave match
-		elif option == '0':
-			self.request.send(bytes('L' * 32))
+		if len(session_token) == 31:
+			self.request.send(bytes('1' + generate_secret(token_length), 'ascii'))
 		else:
-			print('Bad request')
+			print('Bad session token')
 			self.request.send(bytes('0' * 32, 'ascii'))
 		print('client disconnected...')
-	
-	# TODO: remove
-	def handle_error(self, request, client_address):
-		print('hurr?')
-	
-	# TODO: remove
-	def handle_timeout(self):
-		print('timeout')
 
 if __name__ == "__main__":
 	print("TCP Game server started...\n")

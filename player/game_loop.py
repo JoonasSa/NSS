@@ -29,6 +29,7 @@ def loop(session_token, server_id):
     try:
         tty.setcbreak(sys.stdin.fileno())
         while True:
+            print("SCORE:", game_state.get('score'), ", HP:" , game_state.get('hp'))
             if is_data():
                 c = sys.stdin.read(1)
                 parsed = handle_input(c)
@@ -38,11 +39,14 @@ def loop(session_token, server_id):
                     continue
                 else:
                     send_udp(udp_client, address, session_token + ":" + parsed)
-            status, state = receive_udp(udp_client, 2, 0.2)
+            status, raw = receive_udp(udp_client, 10, 0.3)
             if status == True:
                 last_response = time()
-                game_state = state
-                print(state)
+                score, hp = raw.split(":")
+                if int(hp) <= 0:
+                    print('You died.\nYour score was:', int(score))
+                    break
+                game_state = { 'score': int(score), 'hp': hp }
             elif time() - last_response > 5.0:
                 print('Disconnected from server')
                 break
@@ -70,8 +74,5 @@ def handle_input(c):
         return ""
 
 def init_game_state():
-    game_state = {
-        'score': 0,
-        'alive': True
-    }
+    game_state = { 'score': 0, 'hp': 100 }
     return game_state

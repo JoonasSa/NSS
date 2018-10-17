@@ -19,8 +19,14 @@ def main():
     update()
     print("client updated!")
 
-    end_result = play(session_token)
-    print(end_result)
+    #session_token = "9M47TN6YQJVZ4Y4IO2AJYSK93IWEEJ0Q"
+    play(session_token)
+
+    print("                                   ")
+    print("***********************************")
+    print("* Thank you for playing FPS game! *")
+    print("***********************************")
+    print("                                   ")
 
 if __name__ == "__main__":
     main()

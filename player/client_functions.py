@@ -27,7 +27,7 @@ def send_tcp(connection, msg, timeout=2.0, encoding='ascii'):
 def receive_udp(connection, size, timeout=2.0, encoding='ascii'):
     try:
         connection.settimeout(timeout)
-        encoded_msg = connection.recvfrom(size)
+        encoded_msg, _ = connection.recvfrom(size)
         decoded_msg = encoded_msg.decode(encoding)
         decoded_msg = filter(lambda x: x in printable, decoded_msg) # remove control characters
         return True, "".join(list(decoded_msg))
