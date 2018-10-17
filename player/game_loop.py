@@ -7,8 +7,7 @@ import sys
 import select
 import tty
 import termios
-from time import sleep
-
+from time import time, sleep
 
 config = configparser.ConfigParser()
 config.read('conf.ini')
@@ -22,6 +21,7 @@ def loop(session_token, server_id):
     game_state = init_game_state()
     address = (host, port)
     udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    last_response = time()
 
     # https://stackoverflow.com/questions/2408560/python-nonblocking-console-input
 
@@ -34,11 +34,19 @@ def loop(session_token, server_id):
                 parsed = handle_input(c)
                 if parsed == "end":
                     break
-                elif parsed == "nothing":
+                elif parsed == "":
                     continue
                 else:
-                    send_udp(udp_client, address, parsed)
-            sleep(0.5)
+                    send_udp(udp_client, address, session_token + ":" + parsed)
+            status, state = receive_udp(udp_client, 2, 0.2)
+            if status == True:
+                last_response = time()
+                game_state = state
+                print(state)
+            elif time() - last_response > 5.0:
+                print('Disconnected from server')
+                break
+
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
@@ -51,15 +59,15 @@ def handle_input(c):
     if c == '\x1b': # x1b is ESC
         return "end"
     elif c == "w":
-        return "up"
+        return "UP"
     elif c == "s":
-        return "down"
+        return "DN"
     elif c == "a":
-        return "left"
+        return "LT"
     elif c == "d":
-        return "right"
+        return "RT"
     else:
-        return "nothing"
+        return ""
 
 def init_game_state():
     game_state = {
